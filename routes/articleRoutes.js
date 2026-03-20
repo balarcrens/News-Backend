@@ -6,7 +6,8 @@ const {
   getArticleBySlug,
   getArticleById,
   updateArticle,
-  deleteArticle
+  deleteArticle,
+  likeArticle
 } = require('../controllers/articleController');
 const { protect, admin } = require('../middlewares/authMiddleware');
 
@@ -43,5 +44,7 @@ router.route('/id/:id')
 router.route('/:id')
   .put(protect, admin, updateArticle)
   .delete(protect, admin, deleteArticle);
+
+router.post('/:id/like', likeArticle);
 
 module.exports = router;

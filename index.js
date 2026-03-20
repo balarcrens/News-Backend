@@ -17,7 +17,6 @@ require('./models/Category');
 require('./models/Tag');
 require('./models/Article');
 require('./models/Comment');
-require('./models/Settings');
 require('./models/View');
 
 const app = express();
@@ -34,6 +33,7 @@ const articleRoutes = require('./routes/articleRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const userRoutes = require('./routes/userRoutes');
+const commentRoutes = require('./routes/commentRoutes');
 const sitemapRoutes = require('./routes/sitemapRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 
@@ -42,6 +42,7 @@ app.use('/api/articles', articleRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/comments', commentRoutes);
 app.use('/api/sitemap', sitemapRoutes);
 
 app.get('/', (req, res) => {

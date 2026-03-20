@@ -73,7 +73,11 @@ const getArticleBySlug = async (req, res) => {
       query.status = 'published';
     }
 
-    const article = await Article.findOne(query)
+    const article = await Article.findOneAndUpdate(
+      query,
+      { $inc: { 'engagement.views': 1 } },
+      { new: true }
+    )
       .populate('category', 'name')
       .populate('tags', 'name')
       .populate('author', 'name bio avatar');
@@ -142,11 +146,33 @@ const getArticleById = async (req, res) => {
   }
 };
 
+// @desc    Like an article
+// @route   POST /api/articles/:id/like
+// @access  Public
+const likeArticle = async (req, res) => {
+  try {
+    const article = await Article.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { 'engagement.likes': 1 } },
+      { new: true }
+    );
+
+    if (article) {
+      res.json({ likes: article.engagement.likes });
+    } else {
+      res.status(404).json({ message: 'Article not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createArticle,
   getArticles,
   getArticleBySlug,
   getArticleById,
   updateArticle,
-  deleteArticle
+  deleteArticle,
+  likeArticle
 };

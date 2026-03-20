@@ -1,6 +1,7 @@
 const Article = require('../models/Article');
 const Category = require('../models/Category');
 const User = require('../models/User');
+const Comment = require('../models/Comment');
 
 // @desc    Get dashboard statistics
 // @route   GET /api/admin/stats
@@ -24,6 +25,8 @@ const getDashboardStats = async (req, res) => {
     const totalViews = stats[0]?.totalViews || 0;
     const totalLikes = stats[0]?.totalLikes || 0;
     
+    const totalComments = await Comment.countDocuments({ isApproved: true });
+    
     const recentArticles = await Article.find()
       .sort({ createdAt: -1 })
       .limit(5)
@@ -35,6 +38,7 @@ const getDashboardStats = async (req, res) => {
       draftArticles,
       totalViews,
       totalLikes,
+      totalComments,
       recentArticles
     });
   } catch (error) {
