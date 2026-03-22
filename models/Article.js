@@ -4,7 +4,7 @@ const ArticleSchema = new mongoose.Schema({
   title: { type: String, required: [true, 'Title is required'], trim: true },
   slug: { type: String, unique: true, index: true, lowercase: true, trim: true },
   summary: { type: String, maxLength: [500, 'Summary cannot exceed 500 characters'] },
-  content: { type: String, required: [true, 'Content is required'] },
+  content: { type: mongoose.Schema.Types.Mixed, required: [true, 'Content is required'] },
   
   media: {
     featuredImage: String,
@@ -63,6 +63,8 @@ const ArticleSchema = new mongoose.Schema({
     views: { type: Number, default: 0 },
     likes: { type: Number, default: 0 },
     shares: { type: Number, default: 0 },
+    likedByUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    likedByIPs: [String],
   },
 
   automation: {

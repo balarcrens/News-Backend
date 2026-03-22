@@ -41,6 +41,14 @@ const getArticles = async (req, res) => {
       filter.category = req.query.category;
     }
 
+    if (req.query.isFeatured) {
+      filter.isFeatured = req.query.isFeatured === 'true';
+    }
+
+    if (req.query.isBreaking) {
+      filter.isBreaking = req.query.isBreaking === 'true';
+    }
+
     if (req.query.keyword) {
       filter.$or = [
         { title: { $regex: req.query.keyword, $options: 'i' } },
@@ -49,13 +57,31 @@ const getArticles = async (req, res) => {
       ];
     }
 
-    const articles = await Article.find(filter)
-      .populate('category', 'name slug')
-      .populate('tags', 'name slug')
-      .populate('author', 'name avatar')
-      .sort({ createdAt: -1 });
+    // Pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-    res.json(articles);
+    const [articles, total] = await Promise.all([
+      Article.find(filter)
+        .populate('category', 'name slug')
+        .populate('tags', 'name slug')
+        .populate('author', 'name avatar')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Article.countDocuments(filter)
+    ]);
+
+    res.json({
+      articles,
+      pagination: {
+        totalItems: total,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+        limit
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -83,7 +109,22 @@ const getArticleBySlug = async (req, res) => {
       .populate('author', 'name bio avatar');
 
     if (article) {
-      res.json(article);
+      const articleObj = article.toObject();
+      
+      // Check if current user or IP has liked
+      let isLiked = false;
+      if (req.user) {
+        isLiked = article.engagement.likedByUsers.some(id => id.toString() === req.user._id.toString());
+      } else {
+        isLiked = article.engagement.likedByIPs.includes(req.ip);
+      }
+      
+      articleObj.isLiked = isLiked;
+      // Don't leak all users/IPs who liked
+      delete articleObj.engagement.likedByUsers;
+      delete articleObj.engagement.likedByIPs;
+
+      res.json(articleObj);
     } else {
       res.status(404).json({ message: 'Article not found or not published' });
     }
@@ -151,17 +192,39 @@ const getArticleById = async (req, res) => {
 // @access  Public
 const likeArticle = async (req, res) => {
   try {
-    const article = await Article.findByIdAndUpdate(
-      req.params.id,
-      { $inc: { 'engagement.likes': 1 } },
-      { new: true }
-    );
+    const article = await Article.findById(req.params.id);
+    if (!article) return res.status(404).json({ message: 'Article not found' });
 
-    if (article) {
-      res.json({ likes: article.engagement.likes });
+    let isLiked = false;
+    const userId = req.user ? req.user._id : null;
+    const ip = req.ip;
+
+    if (userId) {
+      const index = article.engagement.likedByUsers.indexOf(userId);
+      if (index === -1) {
+        article.engagement.likedByUsers.push(userId);
+        article.engagement.likes += 1;
+        isLiked = true;
+      } else {
+        article.engagement.likedByUsers.splice(index, 1);
+        article.engagement.likes = Math.max(0, article.engagement.likes - 1);
+        isLiked = false;
+      }
     } else {
-      res.status(404).json({ message: 'Article not found' });
+      const index = article.engagement.likedByIPs.indexOf(ip);
+      if (index === -1) {
+        article.engagement.likedByIPs.push(ip);
+        article.engagement.likes += 1;
+        isLiked = true;
+      } else {
+        article.engagement.likedByIPs.splice(index, 1);
+        article.engagement.likes = Math.max(0, article.engagement.likes - 1);
+        isLiked = false;
+      }
     }
+
+    await article.save();
+    res.json({ likes: article.engagement.likes, isLiked });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
