@@ -18,6 +18,7 @@ require('./models/Tag');
 require('./models/Article');
 require('./models/Comment');
 require('./models/View');
+require('./models/Subscription');
 
 const app = express();
 
@@ -37,6 +38,7 @@ const userRoutes = require('./routes/userRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const sitemapRoutes = require('./routes/sitemapRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 
 app.use('/api/auth', authRoutes);
@@ -47,6 +49,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/sitemap', sitemapRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 app.get('/', (req, res) => {
   res.send('News Platform API is running...');
