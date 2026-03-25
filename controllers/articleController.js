@@ -49,12 +49,13 @@ const getArticles = async (req, res) => {
       filter.isBreaking = req.query.isBreaking === 'true';
     }
 
+    let sort = { createdAt: -1 };
+    let projection = {};
+
     if (req.query.keyword) {
-      filter.$or = [
-        { title: { $regex: req.query.keyword, $options: 'i' } },
-        { summary: { $regex: req.query.keyword, $options: 'i' } },
-        { content: { $regex: req.query.keyword, $options: 'i' } }
-      ];
+      filter.$text = { $search: req.query.keyword };
+      projection = { score: { $meta: 'textScore' } };
+      sort = { score: { $meta: 'textScore' } };
     }
 
     // Pagination
@@ -63,11 +64,11 @@ const getArticles = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const [articles, total] = await Promise.all([
-      Article.find(filter)
+      Article.find(filter, projection)
         .populate('category', 'name slug')
         .populate('tags', 'name slug')
         .populate('author', 'name avatar')
-        .sort({ createdAt: -1 })
+        .sort(sort)
         .skip(skip)
         .limit(limit),
       Article.countDocuments(filter)
