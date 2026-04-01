@@ -41,6 +41,14 @@ const getArticles = async (req, res) => {
       filter.category = req.query.category;
     }
 
+    if (req.query.author) {
+      filter.author = req.query.author;
+    }
+
+    if (req.query.tags) {
+      filter.tags = { $in: req.query.tags.split(',') };
+    }
+
     if (req.query.isFeatured) {
       filter.isFeatured = req.query.isFeatured === 'true';
     }
@@ -68,9 +76,11 @@ const getArticles = async (req, res) => {
         .populate('category', 'name slug')
         .populate('tags', 'name slug')
         .populate('author', 'name avatar')
+        .select('-content -engagement.likedByUsers -engagement.likedByIPs')
         .sort(sort)
         .skip(skip)
-        .limit(limit),
+        .limit(limit)
+        .lean(),
       Article.countDocuments(filter)
     ]);
 
@@ -107,10 +117,11 @@ const getArticleBySlug = async (req, res) => {
     )
       .populate('category', 'name')
       .populate('tags', 'name')
-      .populate('author', 'name bio avatar');
+      .populate('author', 'name bio avatar')
+      .lean();
 
     if (article) {
-      const articleObj = article.toObject();
+      const articleObj = article;
       
       // Check if current user or IP has liked
       let isLiked = false;

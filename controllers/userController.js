@@ -54,4 +54,17 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, updateUserRole, deleteUser };
+// @desc    Get user profile by ID (Public)
+// @route   GET /api/users/profile/:id
+// @access  Public
+const getAuthorProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('name bio avatar role createdAt');
+    if (!user) return res.status(404).json({ message: 'Author not found' });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getUsers, updateUserRole, deleteUser, getAuthorProfile };
