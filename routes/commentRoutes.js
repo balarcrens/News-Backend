@@ -8,7 +8,7 @@ const {
 const { protect, admin } = require('../middlewares/authMiddleware');
 
 router.route('/')
-  .post(addComment);
+  .post(protect, addComment);
 
 router.route('/article/:articleId')
   .get(getCommentsByArticle);

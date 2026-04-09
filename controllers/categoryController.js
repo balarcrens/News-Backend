@@ -1,5 +1,41 @@
 const Category = require('../models/Category');
+const Article = require('../models/Article');
 const slugify = require('slugify');
+
+// @desc    Get all categories with article counts
+// @route   GET /api/categories
+// @access  Public
+const getCategories = async (req, res) => {
+  try {
+    const categories = await Category.find({ isActive: true }).sort({ displayOrder: 1, name: 1 }).lean();
+    
+    // Enrich categories with article counts
+    const categoriesWithCount = await Promise.all(categories.map(async (cat) => {
+      const count = await Article.countDocuments({ category: cat._id, status: 'published' });
+      return { ...cat, articleCount: count };
+    }));
+
+    res.json(categoriesWithCount);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get single category by slug
+// @route   GET /api/categories/slug/:slug
+// @access  Public
+const getCategoryBySlug = async (req, res) => {
+  try {
+    const category = await Category.findOne({ slug: req.params.slug, isActive: true });
+    if (category) {
+      res.json(category);
+    } else {
+      res.status(404).json({ message: 'Category not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // @desc    Create a category
 // @route   POST /api/categories
@@ -23,18 +59,6 @@ const createCategory = async (req, res) => {
     res.status(201).json(category);
   } catch (error) {
     res.status(400).json({ message: error.message });
-  }
-};
-
-// @desc    Get all categories
-// @route   GET /api/categories
-// @access  Public
-const getCategories = async (req, res) => {
-  try {
-    const categories = await Category.find({}).sort({ displayOrder: 1, name: 1 });
-    res.json(categories);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
 };
 
@@ -82,6 +106,7 @@ const deleteCategory = async (req, res) => {
 module.exports = {
   createCategory,
   getCategories,
+  getCategoryBySlug,
   updateCategory,
   deleteCategory,
 };

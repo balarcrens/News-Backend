@@ -57,13 +57,33 @@ const getArticles = async (req, res) => {
       filter.isBreaking = req.query.isBreaking === 'true';
     }
 
-    let sort = { createdAt: -1 };
-    let projection = {};
+    if (req.query.startDate) {
+      filter.createdAt = { ...filter.createdAt, $gte: new Date(req.query.startDate) };
+    }
 
+    if (req.query.endDate) {
+      filter.createdAt = { ...filter.createdAt, $lte: new Date(req.query.endDate) };
+    }
+
+    let sort = { createdAt: -1 };
+    if (req.query.sortBy === 'views') {
+      sort = { 'engagement.views': -1 };
+    } else if (req.query.sortBy === 'likes') {
+      sort = { 'engagement.likes': -1 };
+    } else if (req.query.sortBy === 'oldest') {
+      sort = { createdAt: 1 };
+    } else if (req.query.sortBy === 'newest') {
+      sort = { createdAt: -1 };
+    }
+
+    let projection = {};
     if (req.query.keyword) {
       filter.$text = { $search: req.query.keyword };
       projection = { score: { $meta: 'textScore' } };
-      sort = { score: { $meta: 'textScore' } };
+      // If no other sort is explicitly requested, sort by relevance score
+      if (!req.query.sortBy || req.query.sortBy === 'relevance') {
+        sort = { score: { $meta: 'textScore' } };
+      }
     }
 
     // Pagination
@@ -75,8 +95,8 @@ const getArticles = async (req, res) => {
       Article.find(filter, projection)
         .populate('category', 'name slug')
         .populate('tags', 'name slug')
-        .populate('author', 'name avatar')
-        .select('-content -engagement.likedByUsers -engagement.likedByIPs')
+        .populate('author', 'name bio avatar')
+        .select('-engagement.likedByUsers -engagement.likedByIPs')
         .sort(sort)
         .skip(skip)
         .limit(limit)
@@ -207,32 +227,18 @@ const likeArticle = async (req, res) => {
     const article = await Article.findById(req.params.id);
     if (!article) return res.status(404).json({ message: 'Article not found' });
 
-    let isLiked = false;
-    const userId = req.user ? req.user._id : null;
-    const ip = req.ip;
+    const userId = req.user._id;
+    const index = article.engagement.likedByUsers.indexOf(userId);
 
-    if (userId) {
-      const index = article.engagement.likedByUsers.indexOf(userId);
-      if (index === -1) {
-        article.engagement.likedByUsers.push(userId);
-        article.engagement.likes += 1;
-        isLiked = true;
-      } else {
-        article.engagement.likedByUsers.splice(index, 1);
-        article.engagement.likes = Math.max(0, article.engagement.likes - 1);
-        isLiked = false;
-      }
+    let isLiked = false;
+    if (index === -1) {
+      article.engagement.likedByUsers.push(userId);
+      article.engagement.likes += 1;
+      isLiked = true;
     } else {
-      const index = article.engagement.likedByIPs.indexOf(ip);
-      if (index === -1) {
-        article.engagement.likedByIPs.push(ip);
-        article.engagement.likes += 1;
-        isLiked = true;
-      } else {
-        article.engagement.likedByIPs.splice(index, 1);
-        article.engagement.likes = Math.max(0, article.engagement.likes - 1);
-        isLiked = false;
-      }
+      article.engagement.likedByUsers.splice(index, 1);
+      article.engagement.likes = Math.max(0, article.engagement.likes - 1);
+      isLiked = false;
     }
 
     await article.save();

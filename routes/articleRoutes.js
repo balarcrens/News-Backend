@@ -25,6 +25,6 @@ router.route('/:id')
   .put(protect, admin, updateArticle)
   .delete(protect, admin, deleteArticle);
 
-router.post('/:id/like', semiProtect, likeArticle);
+router.post('/:id/like', protect, likeArticle);
 
 module.exports = router;
