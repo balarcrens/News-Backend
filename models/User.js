@@ -3,19 +3,21 @@ const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: [true, 'Name is required'], trim: true },
-  email: { 
-    type: String, 
-    required: [true, 'Email is required'], 
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
     unique: true,
     lowercase: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address']
   },
   password: { type: String, required: [true, 'Password is required'], minlength: 6 },
 
+  googleId: { type: String },
+
   role: {
     type: String,
-    enum: ["admin", "editor", "author", "user"],
-    default: "author"
+    enum: ["admin", "author", "user"],
+    default: "user"
   },
 
   profile: {
@@ -35,7 +37,8 @@ const UserSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Hash password before saving
-UserSchema.pre('save', async function() {
+UserSchema.pre('save', async function () {
+  if (!this.password) return;
   if (!this.isModified('password')) {
     return;
   }
@@ -44,12 +47,12 @@ UserSchema.pre('save', async function() {
 });
 
 // Match user entered password to hashed password in database
-UserSchema.methods.matchPassword = async function(enteredPassword) {
+UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
 // Generate and hash password token
-UserSchema.methods.getResetPasswordToken = function() {
+UserSchema.methods.getResetPasswordToken = function () {
   // Generate token
   const resetToken = require('crypto').randomBytes(20).toString('hex');
 

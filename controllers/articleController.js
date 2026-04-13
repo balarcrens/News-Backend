@@ -1,5 +1,75 @@
 const Article = require('../models/Article');
+const Category = require('../models/Category');
 const slugify = require('slugify');
+
+// @desc    Get data for Home page (Featured, Latest, Popular, Categories with Articles)
+// @route   GET /api/articles/home
+// @access  Public
+const getHomeData = async (req, res) => {
+  try {
+    const [featured, latest, popular, allCategories] = await Promise.all([
+      // 1. Featured Articles
+      Article.find({ status: 'published', isFeatured: true })
+        .populate('category', 'name slug')
+        .populate('author', 'name avatar')
+        .sort({ publishedAt: -1, createdAt: -1 })
+        .limit(3)
+        .lean(),
+
+      // 2. Latest Articles
+      Article.find({ status: 'published' })
+        .populate('category', 'name slug')
+        .populate('author', 'name avatar')
+        .sort({ publishedAt: -1, createdAt: -1 })
+        .limit(10)
+        .lean(),
+
+      // 3. Popular Articles
+      Article.find({ status: 'published' })
+        .populate('category', 'name slug')
+        .populate('author', 'name avatar')
+        .sort({ 'engagement.views': -1 })
+        .limit(5)
+        .lean(),
+
+      // 4. All Active Categories
+      Category.find({ isActive: true }).sort({ displayOrder: 1, name: 1 }).lean()
+    ]);
+
+    // 5. For each category, get its top 2 articles
+    // We do this in parallel to keep it fast
+    const categoriesWithArticles = await Promise.all(
+      allCategories.map(async (cat) => {
+        const articles = await Article.find({ 
+          status: 'published', 
+          category: cat._id 
+        })
+        .populate('category', 'name slug')
+        .populate('author', 'name avatar')
+        .sort({ publishedAt: -1, createdAt: -1 })
+        .limit(2)
+        .lean();
+
+        return {
+          ...cat,
+          articles
+        };
+      })
+    );
+
+    // Filter out categories with no articles to keep frontend clean
+    const activeCategories = categoriesWithArticles.filter(c => c.articles && c.articles.length > 0);
+
+    res.json({
+      featured,
+      latest,
+      popular,
+      categories: activeCategories
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // @desc    Create an article
 // @route   POST /api/articles
@@ -255,5 +325,6 @@ module.exports = {
   getArticleById,
   updateArticle,
   deleteArticle,
-  likeArticle
+  likeArticle,
+  getHomeData
 };

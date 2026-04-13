@@ -7,13 +7,16 @@ const {
   getArticleById,
   updateArticle,
   deleteArticle,
-  likeArticle
+  likeArticle,
+  getHomeData
 } = require('../controllers/articleController');
 const { protect, semiProtect, admin } = require('../middlewares/authMiddleware');
 
 router.route('/')
   .post(protect, admin, createArticle)
   .get(semiProtect, getArticles);
+
+router.get('/home', semiProtect, getHomeData);
 
 router.route('/:slug')
   .get(semiProtect, getArticleBySlug);
