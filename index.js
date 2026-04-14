@@ -44,6 +44,7 @@ const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const authorRoutes = require('./routes/authorRoutes');
 const tagRoutes = require('./routes/tagRoutes');
 const viewRoutes = require('./routes/viewRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 
 app.use('/api/auth', authRoutes);
@@ -58,6 +59,7 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/authors', authorRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/views', viewRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/', (req, res) => {
   res.send('News Platform API is running...');

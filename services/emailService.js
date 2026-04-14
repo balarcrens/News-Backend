@@ -167,7 +167,7 @@ exports.sendSubscriptionEmail = async (email) => {
     <div class="divider"></div>
     <p style="font-size: 13px; color: #666;">If you believe this was a mistake, no action is needed. You can unsubscribe at the bottom of any future email.</p>
   `;
-  
+
   await sendEmail({
     email,
     subject: 'Welcome to NexoraNews | Daily Briefing Subscribed',

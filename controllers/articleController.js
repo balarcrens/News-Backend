@@ -1,6 +1,8 @@
 const Article = require('../models/Article');
 const Category = require('../models/Category');
+const Tag = require('../models/Tag');
 const slugify = require('slugify');
+
 
 // @desc    Get data for Home page (Featured, Latest, Popular, Categories with Articles)
 // @route   GET /api/articles/home
@@ -71,6 +73,40 @@ const getHomeData = async (req, res) => {
   }
 };
 
+// Helper function to process tags (find or create)
+const processTags = async (tagsData) => {
+  if (!tagsData || !Array.isArray(tagsData)) return [];
+  
+  const processedTags = [];
+  for (const tag of tagsData) {
+    // If it's already an ObjectId (or looks like one), keep it
+    if (tag.toString().match(/^[0-9a-fA-F]{24}$/)) {
+      processedTags.push(tag);
+      continue;
+    }
+
+    // Otherwise, treat it as a tag name, find or create it
+    const tagName = tag;
+    if (!tagName) continue;
+
+    let existingTag = await Tag.findOne({ 
+      $or: [
+        { name: new RegExp(`^${tagName}$`, 'i') },
+        { slug: slugify(tagName, { lower: true, strict: true }) }
+      ]
+    });
+
+    if (!existingTag) {
+      existingTag = await Tag.create({
+        name: tagName,
+        slug: slugify(tagName, { lower: true, strict: true })
+      });
+    }
+    processedTags.push(existingTag._id);
+  }
+  return processedTags;
+};
+
 // @desc    Create an article
 // @route   POST /api/articles
 // @access  Private/Admin
@@ -85,12 +121,18 @@ const createArticle = async (req, res) => {
 
     if (req.user) articleData.author = req.user._id;
 
+    // Process tags if they are strings
+    if (articleData.tags && Array.isArray(articleData.tags)) {
+      articleData.tags = await processTags(articleData.tags);
+    }
+
     const article = await Article.create(articleData);
     res.status(201).json(article);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
+
 
 // @desc    Get all articles (support for drafts/published)
 // @route   GET /api/articles
@@ -244,6 +286,11 @@ const updateArticle = async (req, res) => {
       req.body.slug = slugify(req.body.title, { lower: true, strict: true });
     }
 
+    // Process tags if they are strings
+    if (req.body.tags && Array.isArray(req.body.tags)) {
+      req.body.tags = await processTags(req.body.tags);
+    }
+
     const article = await Article.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
 
     if (article) {
@@ -255,6 +302,7 @@ const updateArticle = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
 
 // @desc    Delete article
 // @route   DELETE /api/articles/:id
