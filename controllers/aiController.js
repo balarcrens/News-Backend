@@ -9,16 +9,31 @@ const generateTopics = async (req, res) => {
     }
 };
 
-const generateArticle = async (req, res) => {
-    const { topic } = req.body;
+const suggestTitles = async (req, res) => {
+    const { hint } = req.body;
+    try {
+        const suggestions = await geminiService.generateContent('prompt3.md', {
+            user_hint: hint || 'General trending news'
+        });
+        res.status(200).json(suggestions);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to suggest titles', error: error.message });
+    }
+};
 
-    if (!topic) {
-        return res.status(400).json({ message: 'Topic is required for article generation' });
+const generateArticle = async (req, res) => {
+    const { topic, hint } = req.body;
+
+    if (!topic && !hint) {
+        return res.status(400).json({ message: 'Topic or Hint is required for article generation' });
     }
 
     try {
+        // Construct the context: Use hint as primary instruction, topic as secondary
+        const context = hint ? `INSTRUCTION: ${hint}. BASE TOPIC: ${topic || 'trending news'}` : topic;
+
         const article = await geminiService.generateContent('prompt2.md', {
-            selected_topic_here: topic
+            selected_topic_here: context
         });
         res.status(200).json(article);
     } catch (error) {
@@ -28,5 +43,6 @@ const generateArticle = async (req, res) => {
 
 module.exports = {
     generateTopics,
+    suggestTitles,
     generateArticle
 };

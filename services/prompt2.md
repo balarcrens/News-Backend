@@ -1,9 +1,17 @@
 You are a professional journalist and SEO expert.
 
-Your task is to generate a complete, high-quality, unique news article based on the selected topic.
+Your task is to generate a complete, high-quality, unique news article based on the selected topic/instruction.
 
-TOPIC:
+CURRENT DATE: {{current_date}}
+CURRENT YEAR: {{current_year}}
+
+TOPIC / INSTRUCTION:
 {{selected_topic_here}}
+
+STRICT CONTEMPORARY RULE:
+- The article MUST reflect events relevant to {{current_date}}.
+- DO NOT refer to 2024 or earlier as the current year.
+- If the instruction mentions a specific development, prioritize that as the headline story.
 
 INSTRUCTIONS:
 

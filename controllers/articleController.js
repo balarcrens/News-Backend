@@ -78,16 +78,33 @@ const processTags = async (tagsData) => {
   if (!tagsData || !Array.isArray(tagsData)) return [];
   
   const processedTags = [];
-  for (const tag of tagsData) {
-    // If it's already an ObjectId (or looks like one), keep it
-    if (tag.toString().match(/^[0-9a-fA-F]{24}$/)) {
-      processedTags.push(tag);
-      continue;
+  for (let tag of tagsData) {
+    if (!tag) continue;
+
+    let tagName;
+    
+    // If it's an object, extract ID if possible or name
+    if (typeof tag === 'object') {
+      if (tag._id && tag._id.toString().match(/^[0-9a-fA-F]{24}$/)) {
+        processedTags.push(tag._id.toString());
+        continue;
+      } else if (tag.name) {
+        tagName = tag.name.toString();
+      } else {
+        continue; // Skip invalid objects
+      }
+    } else {
+      // It's a primitive (likely string)
+      const tagStr = tag.toString();
+      // If it's already an ObjectId, keep it
+      if (tagStr.match(/^[0-9a-fA-F]{24}$/)) {
+        processedTags.push(tagStr);
+        continue;
+      }
+      tagName = tagStr;
     }
 
-    // Otherwise, treat it as a tag name, find or create it
-    const tagName = tag;
-    if (!tagName) continue;
+    if (!tagName || typeof tagName !== 'string') continue;
 
     let existingTag = await Tag.findOne({ 
       $or: [

@@ -6,7 +6,15 @@ const Article = require('../models/Article');
 // @access  Public (or Private if we want to enforce login)
 const addComment = async (req, res) => {
   try {
-    const { articleId, userName, email, comment, parentComment } = req.body;
+    const { articleId, comment, parentComment } = req.body;
+    let { userName, email, profilePicture } = req.body;
+
+    // If user is logged in, use their details
+    if (req.user) {
+      userName = req.user.name;
+      email = req.user.email;
+      profilePicture = req.user.profilePicture;
+    }
 
     const article = await Article.findById(articleId);
     if (!article) {
@@ -18,6 +26,7 @@ const addComment = async (req, res) => {
       user: req.user ? req.user._id : null,
       userName,
       email,
+      profilePicture,
       comment,
       parentComment: parentComment || null,
       isApproved: true // Auto-approving for now, can change to false for moderation
@@ -34,12 +43,12 @@ const addComment = async (req, res) => {
 // @access  Public
 const getCommentsByArticle = async (req, res) => {
   try {
-    const comments = await Comment.find({ 
-      article: req.params.articleId, 
-      isApproved: true 
+    const comments = await Comment.find({
+      article: req.params.articleId,
+      isApproved: true
     })
-    .populate('user', 'name avatar')
-    .sort({ createdAt: -1 });
+      .populate('user', 'name profilePicture')
+      .sort({ createdAt: -1 });
 
     res.json(comments);
   } catch (error) {

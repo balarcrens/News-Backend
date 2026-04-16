@@ -73,7 +73,7 @@ const googleAuth = async (req, res) => {
         audience: process.env.GOOGLE_CLIENT_ID
     });
 
-    const { email, name } = ticket.getPayload();
+    const { email, name, picture, sub } = ticket.getPayload();
 
     let user = await User.findOne({ email });
 
@@ -82,14 +82,20 @@ const googleAuth = async (req, res) => {
         user = await User.create({
             name,
             email,
-            password: crypto.randomBytes(10).toString('hex') // random password
+            profilePicture: picture,
+            googleId: sub,
+            password: crypto.randomBytes(10).toString('hex')
         });
+    } else {
+        user.profilePicture = picture;
+        await user.save();
     }
 
     res.json({
         _id: user.id,
         name: user.name,
         email: user.email,
+        profilePicture: user.profilePicture,
         role: user.role,
         token: generateToken(user._id)
     });

@@ -25,6 +25,9 @@ const UserSchema = new mongoose.Schema({
     bio: { type: String, maxLength: 500 },
   },
 
+  profilePicture: String,
+  googleId: String,
+
   socialLinks: {
     twitter: String,
     linkedin: String,

@@ -22,10 +22,18 @@ const generateContent = async (promptName, replacements = {}) => {
     try {
         let promptTemplate = await getPromptContent(promptName);
 
+        // Automatic date injection for contemporary context (2026 focus)
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+        const yearStr = now.getFullYear().toString();
+        
+        promptTemplate = promptTemplate.replace(/{{current_date}}/g, dateStr);
+        promptTemplate = promptTemplate.replace(/{{current_year}}/g, yearStr);
+
         // Dynamic replacements (e.g., {{selected_topic_here}})
         Object.keys(replacements).forEach(key => {
             const regex = new RegExp(`{{${key}}}`, 'g');
-            promptTemplate = promptTemplate.replace(regex, replacements[key]);
+            promptTemplate = promptTemplate.replace(regex, replacements[key] || '');
         });
 
         const model = genAI.getGenerativeModel({
