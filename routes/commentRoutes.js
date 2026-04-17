@@ -3,7 +3,8 @@ const router = express.Router();
 const {
   addComment,
   getCommentsByArticle,
-  deleteComment
+  deleteComment,
+  likeComment
 } = require('../controllers/commentController');
 const { protect, admin } = require('../middlewares/authMiddleware');
 
@@ -15,5 +16,8 @@ router.route('/article/:articleId')
 
 router.route('/:id')
   .delete(protect, admin, deleteComment);
+
+router.route('/:id/like')
+  .put(protect, likeComment);
 
 module.exports = router;

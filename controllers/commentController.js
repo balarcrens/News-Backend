@@ -9,7 +9,6 @@ const addComment = async (req, res) => {
     const { articleId, comment, parentComment } = req.body;
     let { userName, email, profilePicture } = req.body;
 
-    // If user is logged in, use their details
     if (req.user) {
       userName = req.user.name;
       email = req.user.email;
@@ -29,7 +28,6 @@ const addComment = async (req, res) => {
       profilePicture,
       comment,
       parentComment: parentComment || null,
-      isApproved: true // Auto-approving for now, can change to false for moderation
     });
 
     res.status(201).json(newComment);
@@ -44,10 +42,10 @@ const addComment = async (req, res) => {
 const getCommentsByArticle = async (req, res) => {
   try {
     const comments = await Comment.find({
-      article: req.params.articleId,
-      isApproved: true
+      article: req.params.articleId
     })
       .populate('user', 'name profilePicture')
+      .populate('likes', 'name')
       .sort({ createdAt: -1 });
 
     res.json(comments);
@@ -73,8 +71,41 @@ const deleteComment = async (req, res) => {
   }
 };
 
+// @desc    Like / Unlike a comment
+// @route   PUT /api/comments/:id/like
+// @access  Private
+const likeComment = async (req, res) => {
+  try {
+    const comment = await Comment.findById(req.params.id);
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    // Check if user already liked
+    const alreadyLiked = comment.likes.find(
+      (userId) => userId.toString() === req.user._id.toString()
+    );
+
+    if (alreadyLiked) {
+      // Unlike
+      comment.likes = comment.likes.filter(
+        (userId) => userId.toString() !== req.user._id.toString()
+      );
+    } else {
+      // Like
+      comment.likes.push(req.user._id);
+    }
+
+    await comment.save();
+    res.json(comment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   addComment,
   getCommentsByArticle,
-  deleteComment
+  deleteComment,
+  likeComment
 };

@@ -29,7 +29,6 @@ const generateArticle = async (req, res) => {
     }
 
     try {
-        // Construct the context: Use hint as primary instruction, topic as secondary
         const context = hint ? `INSTRUCTION: ${hint}. BASE TOPIC: ${topic || 'trending news'}` : topic;
 
         const article = await geminiService.generateContent('prompt2.md', {

@@ -7,11 +7,8 @@ const CommentSchema = new mongoose.Schema({
   email: { type: String, required: true },
   profilePicture: { type: String },
   comment: { type: String, required: true, maxLength: 1000 },
-  
   parentComment: { type: mongoose.Schema.Types.ObjectId, ref: "Comment", default: null }, // Support nested replies
-
-  isApproved: { type: Boolean, default: false, index: true },
-  likes: { type: Number, default: 0 },
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Comment', CommentSchema);

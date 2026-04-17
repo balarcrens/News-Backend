@@ -11,9 +11,6 @@ const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
 const registerUser = async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -38,9 +35,6 @@ const registerUser = async (req, res) => {
     }
 };
 
-// @desc    Auth user & get token
-// @route   POST /api/auth/login
-// @access  Public
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -62,9 +56,6 @@ const loginUser = async (req, res) => {
     }
 };
 
-// @desc    Google Auth
-// @route   POST /api/auth/google
-// @access  Public
 const googleAuth = async (req, res) => {
     const { token } = req.body;
 
@@ -101,9 +92,6 @@ const googleAuth = async (req, res) => {
     });
 };
 
-// @desc    GitHub Auth
-// @route   POST /api/auth/github
-// @access  Public
 const githubAuth = async (req, res) => {
     const { code } = req.body;
 
@@ -132,7 +120,6 @@ const githubAuth = async (req, res) => {
 
         const { email, name, login } = userRes.data;
 
-        // Get email if private
         let userEmail = email;
 
         if (!userEmail) {
@@ -150,7 +137,6 @@ const githubAuth = async (req, res) => {
             return res.status(400).json({ message: 'Email not found from GitHub' });
         }
 
-        // Find or create user
         let user = await User.findOne({ email: userEmail });
 
         if (!user) {
@@ -175,9 +161,6 @@ const githubAuth = async (req, res) => {
     }
 };
 
-// @desc    Get current user
-// @route   GET /api/auth/me
-// @access  Private
 const getMe = async (req, res) => {
     try {
         const user = await User.findById(req.user._id).select('-password');
@@ -187,9 +170,6 @@ const getMe = async (req, res) => {
     }
 };
 
-// @desc    Forgot password
-// @route   POST /api/auth/forgotpassword
-// @access  Public
 const forgotPassword = async (req, res) => {
     try {
         const user = await User.findOne({ email: req.body.email });
@@ -198,12 +178,10 @@ const forgotPassword = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Get reset token
         const resetToken = user.getResetPasswordToken();
 
         await user.save({ validateBeforeSave: false });
 
-        // Create reset url
         const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
         try {
@@ -228,7 +206,6 @@ const forgotPassword = async (req, res) => {
 // @access  Public
 const resetPassword = async (req, res) => {
     try {
-        // Get hashed token
         const resetPasswordToken = crypto
             .createHash('sha256')
             .update(req.params.resettoken)

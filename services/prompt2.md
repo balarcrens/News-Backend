@@ -37,10 +37,15 @@ CONTENT REQUIREMENTS:
 * SEO: metaDescription MUST be STRICTLY between 140 and 160 characters (never exceed 160)
 * Tags: Provide a clean JSON array of strings (e.g., ["Tech", "India", "Nifty"])
 
+---
+
+IMPORTANT: 
+* Also make sure it was not wrong or false information. If you havent any information about this than search on internet or news website and than give perfect and correct and true information
+* You can take reference from 'https://news.google.com/' this website or also from this 'https://timesofindia.indiatimes.com/', but only take reference for true information dont copy news.
 
 ---
 
-RETURN STRICT JSON ONLY (NO TEXT OUTSIDE JSON)
+RETURN STRICT JSON ONLY (NO TEXT OUTSIDE JSON) 
 
 FORMAT:
 
