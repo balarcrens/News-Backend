@@ -38,6 +38,11 @@ const generateContent = async (promptName, replacements = {}) => {
 
         const model = genAI.getGenerativeModel({
             model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+            tools: [
+                {
+                    googleSearch: {},
+                },
+            ],
             generationConfig: {
                 responseMimeType: "application/json",
             }
@@ -45,7 +50,10 @@ const generateContent = async (promptName, replacements = {}) => {
 
         const result = await model.generateContent(promptTemplate);
         const response = await result.response;
-        const text = response.text();
+        let text = response.text();
+
+        // Clean potential markdown code blocks from the response
+        text = text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
 
         return JSON.parse(text);
     } catch (error) {
